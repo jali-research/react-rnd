@@ -1,6 +1,6 @@
 {
-  "name": "react-rnd",
-  "version": "10.4.1",
+  "name": "@jali-research/react-rnd",
+  "version": "10.4.1-jali.0",
   "description": "",
   "title": "react-rnd",
   "main": "./lib/index.es5.js",
@@ -99,8 +99,8 @@
     "fixture": "./fixture.html"
   },
   "dependencies": {
-    "re-resizable": "6.9.6",
-    "react-draggable": "4.4.5",
+    "@jali-research/re-resizable": "6.9.11-jali.0",
+    "@jali-research/react-draggable": "4.4.6-jali.1",
     "tslib": "2.3.1"
   },
   "peerDependencies": {

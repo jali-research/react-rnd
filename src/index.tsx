@@ -1,6 +1,6 @@
 import * as React from "react";
-import { DraggableEventHandler, default as DraggableRoot } from "react-draggable";
-import { Enable, Resizable, ResizeDirection } from "re-resizable";
+import { DraggableEventHandler, default as DraggableRoot } from "@jali-research/react-draggable";
+import { Enable, Resizable, ResizeDirection } from "@jali-research/re-resizable";
 
 // FIXME: https://github.com/mzabriskie/react-draggable/issues/381
 //         I can not find `scale` too...
@@ -47,7 +47,7 @@ export type RndResizeCallback = (
   elementRef: HTMLElement,
   delta: ResizableDelta,
   position: Position,
-) => void;
+) => void | boolean;
 
 type Size = {
   width: string | number;
@@ -133,9 +133,11 @@ export interface Props {
   onMouseDown?: (e: MouseEvent) => void;
   onMouseUp?: (e: MouseEvent) => void;
   onResizeStart?: RndResizeStartCallback;
+  canResize?: RndResizeCallback;
   onResize?: RndResizeCallback;
   onResizeStop?: RndResizeCallback;
   onDragStart?: RndDragCallback;
+  canDrag?: RndDragCallback;
   onDrag?: RndDragCallback;
   onDragStop?: RndDragCallback;
   className?: string;
@@ -188,9 +190,11 @@ interface DefaultProps {
   maxWidth: number;
   maxHeight: number;
   onResizeStart: RndResizeStartCallback;
+  canResize: RndResizeCallback;
   onResize: RndResizeCallback;
   onResizeStop: RndResizeCallback;
   onDragStart: RndDragCallback;
+  canDrag: RndDragCallback;
   onDrag: RndDragCallback;
   onDragStop: RndDragCallback;
   scale: number;
@@ -202,9 +206,11 @@ export class Rnd extends React.PureComponent<Props, State> {
     maxHeight: Number.MAX_SAFE_INTEGER,
     scale: 1,
     onResizeStart: () => {},
+    canResize: () => {},
     onResize: () => {},
     onResizeStop: () => {},
     onDragStart: () => {},
+    canDrag: () => {},
     onDrag: () => {},
     onDragStop: () => {},
   };
@@ -230,9 +236,11 @@ export class Rnd extends React.PureComponent<Props, State> {
     };
 
     this.onResizeStart = this.onResizeStart.bind(this);
+    this.canResize = this.canResize.bind(this);
     this.onResize = this.onResize.bind(this);
     this.onResizeStop = this.onResizeStop.bind(this);
     this.onDragStart = this.onDragStart.bind(this);
+    this.canDrag = this.canDrag.bind(this);
     this.onDrag = this.onDrag.bind(this);
     this.onDragStop = this.onDragStop.bind(this);
     this.getMaxSizesFromProps = this.getMaxSizesFromProps.bind(this);
@@ -357,6 +365,11 @@ export class Rnd extends React.PureComponent<Props, State> {
         left: left - offset.left / scale,
       },
     });
+  }
+
+  canDrag(e: RndDragEvent, data: DraggableData) {
+    if (!this.props.canDrag) return;
+    return this.props.canDrag(e, data);
   }
 
   onDrag(e: RndDragEvent, data: DraggableData) {
@@ -484,6 +497,28 @@ export class Rnd extends React.PureComponent<Props, State> {
     }
   }
 
+  canResize(
+    e: MouseEvent | TouchEvent,
+    direction: ResizeDirection,
+    elementRef: HTMLElement,
+    delta: { height: number; width: number },
+  ): void | boolean {
+    if (this.props.canResize) {
+      this.updateOffsetFromParent();
+      const offset = this.offsetFromParent;
+      const x = this.getDraggablePosition().x + offset.left;
+      const y = this.getDraggablePosition().y + offset.top;
+
+      return this.props.canResize(
+        e,
+        direction,
+        elementRef,
+        delta,
+        {x, y}
+      );
+    }
+  }
+
   onResize(
     e: MouseEvent | TouchEvent,
     direction: ResizeDirection,
@@ -601,6 +636,7 @@ export class Rnd extends React.PureComponent<Props, State> {
       onResize,
       onResizeStop,
       onDragStart,
+      canDrag,
       onDrag,
       onDragStop,
       resizeHandleStyles,
@@ -644,6 +680,7 @@ export class Rnd extends React.PureComponent<Props, State> {
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onStart={this.onDragStart}
+        canDrag={this.canDrag}
         onDrag={this.onDrag}
         onStop={this.onDragStop}
         axis={dragAxisOrUndefined}
@@ -664,6 +701,7 @@ export class Rnd extends React.PureComponent<Props, State> {
           size={this.props.size}
           enable={typeof enableResizing === "boolean" ? getEnableResizingByFlag(enableResizing) : enableResizing}
           onResizeStart={this.onResizeStart}
+          canResize={this.canResize}
           onResize={this.onResize}
           onResizeStop={this.onResizeStop}
           style={innerStyle}
